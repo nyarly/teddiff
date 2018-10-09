@@ -1,9 +1,126 @@
+type Label = u64;
+
+type Cost = u64;
+
+struct Node {
+    label: Label,
+    value: Value,
+}
+
+impl Node {
+    fn num_children(&self) -> u64 {
+        match self.value {
+            Simple(_) => 0,
+            Node(n) => n.num_children,
+        }
+    }
+
+    fn heavy_child(&self) -> Option<Node> {
+        match self.value {
+            Simple(_) => None,
+            Node(n) => n.heavy_child(),
+        }
+    }
+
+    fn light_children(&self) -> Vec<Node> {
+        match self.value {
+            Simple(_) => vec![],
+            Node(n) => n.light_children(),
+        }
+    }
+}
+
+enum Value {
+    Simple(SimpleValue),
+    Node(NodeValue),
+}
+
+type SimpleValue u64;
+
+struct NodeValue {
+    left: Option<Arc<Node>>,
+    right: Option<Arc<Node>>,
+    num_children: u64,
+}
+
+impl NodeValue {
+    fn heavy_child(&self) -> Option<Node> {
+    }
+
+    fn light_children(&self) -> Vec<Node> {
+    }
+}
+
+
+struct Forest {
+    roots: Vec<Node>
+}
+
+impl Forest {
+    fn size() -> u64 {
+        roots.fold(0, |acc, node| acc + node.children())
+    }
+
+    fn subforest_enum(&self, which: Strategy) -> SubforestEnum {
+        SubforestEnum { which }
+    }
+
+    fn subforest(i: u64, j: u64) -> Forest {}
+}
+
+
+fn top_light_subtrees(node: Node) -> impl Iterator<Item = Node> {
+
+}
+
+fn heavy_path() -> impl Iterator<Item = Node> {
+
+}
+
+struct SubforestEnum {
+    which: Strategy,
+}
+
 enum Strategy {
     Left,
     Right,
 }
 
-struct Delta;
+impl Iterator for SubforestEnum {
+    Item = Enumerated;
+
+    fn next(&mut self) -> Option<Self::Item> {
+    }
+}
+
+struct Enumerated {
+    forest: Forest,
+}
+
+struct Delta {
+    f: Forest,
+    g: Forest,
+}
+
+impl Delta {
+    fn compute(f: Forest, g: Forest) -> Cost {
+        Delta{ f, g }.compute();
+    }
+
+    fn compute(&mut self) -> Cost {
+        if self.f.size() < self.g.size() {
+            return Delta(f: g, g: f).compute()
+        }
+
+        for v in self.f.top_light_subtrees() {
+            Delta(f: v, g: self.g).compute() // to fill tables...
+        }
+
+        for v in self.f.heavy_path() {
+            self.fill_delta(v)
+        }
+    }
+}
 
 struct Period {
     delta: Delta
@@ -19,37 +136,7 @@ impl STable {
 }
 
 
-type Cost = u64;
-
 fn ted(left: Forest, right: Forest) -> DeltaTable {
-    if left.size() < right.size() {
-        return ted(right, left);
-    }
-
-    for v in left.top_light() {
-        ted(left.subtree_at(v), right)
-    }
-
-    for v in left.heavy_path() {
-        fill_delta(left, v, right)
-    }
-}
-
-impl Delta {
-    fn compute_on(&mut self, left: Forest, right: Forest) {
-        if left.size() < right.size() {
-            return self.compute_on(right, left);
-        }
-
-        for v in left.top_light_subtrees() {
-            self.compute_on(v, right)
-        }
-
-        for v in left.heavy_path() {
-            self.fill_delta(left, v, right)
-        }
-    }
-
 }
 
 impl Period {
@@ -105,33 +192,6 @@ fn stored_ted_minus_trees() -> Cost {
         s_table.get(k - f.left_tree().size(), j + g.left_tree().size())
     }
 
-}
-
-struct Node {
-    left: Option<Arc<Node>>,
-    right: Option<Arc<Node>>,
-    num_children: u64,
-}
-
-struct Forest {
-    roots: Vec<Node>
-}
-
-impl Forest {
-    fn size() -> u64 {
-        roots.fold(0, |acc, node| acc + node.children)
-    }
-
-    fn subforest_enum(&self, which: Strategy) -> SubforestEnum {
-        SubforestEnum { which }
-    }
-
-    fn subforest(i: u64, j: u64) -> Forest {}
-
-}
-
-struct SubforestEnum {
-    which: Strategy,
 }
 
 
