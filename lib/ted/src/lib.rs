@@ -1,119 +1,56 @@
-type Label = u64;
+mod tree;
 
 type Cost = u64;
 
-struct Node {
-    label: Label,
-    value: Value,
+pub fn ted(left: tree::Forest, right: tree::Forest) -> Cost {
+    Delta::compute(left, rigth)
 }
 
-impl Node {
-    fn num_children(&self) -> u64 {
-        match self.value {
-            Simple(_) => 0,
-            Node(n) => n.num_children,
-        }
-    }
-
-    fn heavy_child(&self) -> Option<Node> {
-        match self.value {
-            Simple(_) => None,
-            Node(n) => n.heavy_child(),
-        }
-    }
-
-    fn light_children(&self) -> Vec<Node> {
-        match self.value {
-            Simple(_) => vec![],
-            Node(n) => n.light_children(),
-        }
-    }
-}
-
-enum Value {
-    Simple(SimpleValue),
-    Node(NodeValue),
-}
-
-type SimpleValue u64;
-
-struct NodeValue {
-    left: Option<Arc<Node>>,
-    right: Option<Arc<Node>>,
-    num_children: u64,
-}
-
-impl NodeValue {
-    fn heavy_child(&self) -> Option<Node> {
-    }
-
-    fn light_children(&self) -> Vec<Node> {
-    }
-}
-
-
-struct Forest {
-    roots: Vec<Node>
-}
-
-impl Forest {
-    fn size() -> u64 {
-        roots.fold(0, |acc, node| acc + node.children())
-    }
-
-    fn subforest_enum(&self, which: Strategy) -> SubforestEnum {
-        SubforestEnum { which }
-    }
-
-    fn subforest(i: u64, j: u64) -> Forest {}
-}
-
-
-fn top_light_subtrees(node: Node) -> impl Iterator<Item = Node> {
-
-}
-
-fn heavy_path() -> impl Iterator<Item = Node> {
-
-}
-
-struct SubforestEnum {
+// From F[i,j(i)] to F[i,0]
+struct PartialSubforestEnum {
     which: Strategy,
 }
 
-enum Strategy {
-    Left,
-    Right,
+impl PartialSubforestEnum {
+
 }
 
-impl Iterator for SubforestEnum {
-    Item = Enumerated;
+impl Iterator for PartialSubforestEnum {
+    Item = tree::Forest;
 
     fn next(&mut self) -> Option<Self::Item> {
     }
 }
 
-struct Enumerated {
-    forest: Forest,
+//
+struct ItermediateSubforestEnum {
+    which: Strategy,
+}
+
+impl Iterator for IntermediateSubforestEnum {
+    Item = tree::Forest;
+
+    fn next(&mut self) -> Option<Self::Item> {
+    }
 }
 
 struct Delta {
-    f: Forest,
-    g: Forest,
+    f: tree::Forest,
+    g: tree::Forest,
 }
 
 impl Delta {
-    fn compute(f: Forest, g: Forest) -> Cost {
+    fn compute(f: tree::Forest, g: tree::Forest) -> Cost {
         Delta{ f, g }.compute();
     }
 
     fn compute(&mut self) -> Cost {
         if self.f.size() < self.g.size() {
-            return Delta(f: g, g: f).compute()
+            return Delta{f: g, g: f}.compute()
         }
 
         for v in self.f.top_light_subtrees() {
-            Delta(f: v, g: self.g).compute() // to fill tables...
+            Delta{f: v, g: self.g}.compute() // to fill tables...
         }
 
         for v in self.f.heavy_path() {
@@ -122,9 +59,35 @@ impl Delta {
     }
 }
 
-struct Period {
-    delta: Delta
+struct Table {
+    data: Vec<Vec<Cost>>
 }
+
+// Will want to make the get/set a trait and add a Transpose wrapper
+impl Table {
+    fn new(i usize, j usize) -> Table {
+        data = Vec::with_capacity(i);
+        for idx in 0..i {
+            data.push(Vec::with_capacity(j))
+        }
+
+        Table{ data }
+    }
+
+
+    fn get(&self, i usize, j usize) -> Cost {
+        // algorithmically, we know the sizes of these tables
+        // a priori, so accesses outside of the range are unexpected.
+        data.get(i).unwrap().get(j).unwrap()
+    }
+
+    fn set(&mut self, i usize, j usize, c Cost) {
+        // algorithmically, we know the sizes of these tables
+        // a priori, so accesses outside of the range are unexpected.
+        *(data.get_mut(i).unwrap().gem_mut(j).unwrap()) = c;
+    }
+}
+
 
 struct STable {
     period: Period,
@@ -135,63 +98,103 @@ impl STable {
     fn new(i: u64) -> STable {}
 }
 
+struct Costs {
+}
 
-fn ted(left: Forest, right: Forest) -> DeltaTable {
+impl Costs {
+    fn delete(n: tree::Node) -> Cost {
+        1
+    }
+
+    fn rename(f: tree::Node, g: tree::Node) -> Cost {
+        if f.label == g.label {
+            0
+        } else {
+            1
+        }
+    }
+}
+
+struct Period {
+    left: &tree::Forest,
+    right: &tree::Forest,
+    delta: &Delta,
+    s: STable,
+    t: TTable,
+    q: QTable,
 }
 
 impl Period {
-    fn compute(&mut self, vp: Node, which: Strategy, left: Forest, right: Forest) {
+    fn new() -> Period {
+        Period{}
+    }
+
+    fn compute(&mut self, vp: tree::Node) {
         for i in g.size()..=0 {
-            which.s_table(i, left, right)
+            let s = self.s_table(i, left, right);
+            self.update_t(i, s);
+            self.update_q(s);
+            self.update_delta(s);
         }
     }
-}
 
-impl Strategy {
-    fn s_table(&self, i: u64, left: Forest, right: Forest) -> STable {
-        for f in self.intermediate_subforest_enum(left) {
-            for g in self.subforest_enum(right, i) {
-                self.del_f(f).cost() + stored_ted_kmo(),
-                self.def_g(g).cost() + stored_ted_jpo(),
-                self.rename(f,g).cost() + stored_ted_circles() + self.stored_ted_minus_trees()
+    fn s_table(&self, i: u64) -> STable {
+        let j_i = right.j(i);
+        for (k, f) in self.intermediate_subforest_enum(left).enumerate() {
+            for (h, g) in self.partial_subforest_enum(right, i).enumerate() {
+                let j = j_i - h;
+                [
+                    self.del_f(f).cost() + self.kmo(),
+                    self.def_g(g).cost() + self.jpo(),
+                    self.rename(f,g).cost() + self.circles() + self.minus_trees()
+                ].iter().min().unwrap()
             }
         }
     }
-}
 
-fn stored_ted_kmo() -> Cost {
-    if k == 1 {
-        a
-    } else {
-        s_table.get(k - 1, j)
-    }
-}
-
-fn stored_ted_jpo() -> Cost {
-    if j == j(i) {
-        if i + j(i) == right.size() {
-            ted(left, NullTree)
+    fn kmo(&self, j u64, k u64) -> Cost {
+        if k == 1 {
+            a
         } else {
-            q.get(j)
+            s_table.get(k - 1, j)
         }
-    } else {
-        s_table.get(k, j + 1)
-    }
-}
-
-fn stored_ted_circles() -> Cost {
-    let v = get_delta_left_index(f);
-    let w = get_delta_right_index(g);
-    delta_table.get(v,w)
-}
-
-fn stored_ted_minus_trees() -> Cost {
-    if j == j(i) {
-        del_forest(f)
-    } else {
-        s_table.get(k - f.left_tree().size(), j + g.left_tree().size())
     }
 
+    fn jpo(&self, i: u64, j: u64, j_i: u64) -> Cost {
+        if j == j_i {
+            if i + j_i == right.size() {
+                ted(self.left, NullTree)
+            } else {
+                self.q.get(j)
+            }
+        } else {
+            self.s.get(k, j + 1)
+        }
+    }
+
+    fn circles(&self) -> Cost {
+        let v = get_delta_left_index(f);
+        let w = get_delta_right_index(g);
+        self.delta.get(v,w)
+    }
+
+    fn minus_trees(&self, j: u64, j_i: u64, k: u64) -> Cost {
+        if j == j_i {
+            del_forest(f)
+        } else {
+            self.s.get(k - f.left_tree().size(), j + g.left_tree().size())
+        }
+
+    }
+
+}
+
+enum Strategy {
+    Left,
+    Right,
+}
+
+impl Strategy {
 }
 
 
