@@ -2,79 +2,39 @@ type Label = u64;
 
 struct Node {
     label: Label,
-    value: Value,
-}
-
-impl Node {
-    fn size(&self) -> u64 {
-        match self.value {
-            Simple(_) => 0,
-            Node(n) => n.num_children,
-        }
-    }
-
-    fn num_children(&self) -> u64 {
-        match self.value {
-            Simple(_) => 0,
-            Node(n) => n.num_children,
-        }
-    }
-
-    fn heavy_child(&self) -> Option<Node> {
-        match self.value {
-            Simple(_) => None,
-            Node(n) => n.heavy_child(),
-        }
-    }
-
-    fn light_children(&self) -> Vec<Node> {
-        match self.value {
-            Simple(_) => vec![],
-            Node(n) => n.light_children(),
-        }
-    }
-
-    fn children(&self) -> Iterator<Value> {
-        match self.value {
-            Simple(_) => iter::empty(),
-            Node(n) => n.iter_children(),
-        }
-    }
-
-    fn ltr_preorder(&self) -> Iterator<&Node> {
-        self.children().fold(iter::once(self), |i, n| i.chain(n.ltr_preorder()))
-    }
-
-    fn rtl_preorder(&self) -> Iterator<&Node> {
-        self.children().rev().fold(iter::once(self), |i, n| i.chain(n.rtl_preorder()))
-    }
-}
-
-enum Value {
-    Simple(SimpleValue),
-    Node(NodeValue),
-}
-
-type SimpleValue u64;
-
-struct NodeValue {
     left: Option<Arc<Node>>,
     right: Option<Arc<Node>>,
     num_children: u64,
 }
 
-impl NodeValue {
-    fn iter_children(&self) -> Iterator<Value> {
-        left.into_iter().chain(right.into_iter());
+impl Node {
+    fn num_children(&self) -> u64 {
+        self.num_children
     }
 
     fn heavy_child(&self) -> Option<Node> {
     }
 
-    fn light_children(&self) -> Vec<Node> {
+    fn light_children(&self) -> Iterator<&Node> {
+        if self.left.num_children > self.right.num_children {
+            self.right.into_iter()
+        } else {
+            self.left.into_iter()
+        }
+    }
+
+    fn ltr_preorder(&self) -> Iterator<&Node> {
+        self.iter_children().fold(iter::once(self), |i, n| i.chain(n.ltr_preorder()))
+    }
+
+    fn rtl_preorder(&self) -> Iterator<&Node> {
+        self.iter_children().rev().fold(iter::once(self), |i, n| i.chain(n.rtl_preorder()))
+    }
+
+    fn iter_children(&self) -> Iterator<&Node> {
+        left.into_iter().chain(right.into_iter());
     }
 }
-
 
 struct Forest {
     roots: Vec<Node>
@@ -82,7 +42,7 @@ struct Forest {
 
 impl Forest {
     fn size() -> u64 {
-        roots.fold(0, |acc, node| acc + node.children())
+        roots.fold(0, |acc, node| acc + node.num_children())
     }
 
     // The "row size" of a subtree enumeration
@@ -114,17 +74,23 @@ impl Forest {
             root.insert(i, c);
         }
     }
+
+    fn rtl_preorder(&self) -> impl Iterator<Item = Node> {
+        self.roots.into_iter().rev().fold(iter::empty(), |i, r| i.chain(r))
+    }
 }
 
-
-fn top_light_subtrees(node: Node) -> impl Iterator<Item = Node> {
-
+struct Tree {
+    root: Node
 }
 
-fn heavy_path() -> impl Iterator<Item = Node> {
+impl Tree {
+    fn top_light_subtrees(node: Node) -> impl Iterator<Item = Node> {
 
-}
+    }
 
-fn rtl_preorder(f: &Forest) -> impl Iterator<Item = Node> {
-    f.roots.into_iter().rev().fold(iter::empty(), |i, r| i.chain(r))
+    // leaf to root
+    fn heavy_path() -> impl Iterator<Item = Node> {
+
+    }
 }

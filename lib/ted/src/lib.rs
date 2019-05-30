@@ -2,6 +2,8 @@ mod tree;
 
 type Cost = u64;
 
+type Table = Vec<Vec<Option<Cost>>>
+
 pub fn ted(left: tree::Forest, right: tree::Forest) -> Cost {
     Delta::compute(left, rigth)
 }
@@ -53,18 +55,33 @@ impl Delta {
             Delta{f: v, g: self.g}.compute() // to fill tables...
         }
 
+        let t = t_table(g.num_children());
+
         for v in self.f.heavy_path() {
-            self.fill_delta(v)
+            self.compute_period(v, t)
         }
+    }
+
+    // named per 2:15
+    fn compute_period(&mut self, v: Node, t: Table) {
     }
 }
 
-struct Table {
-    data: Vec<Vec<Cost>>
+fn t_table(usize: g) -> Vec<Vec<Option<Cost>>> {
+    let mut t = Vec::with_capacity(g.num_children());
+    for i in (0..g) {
+        t.push(Vec::with_capacity(g));
+        t[i].resize(g, None);
+    }
+    t
+}
+
+struct DeltaTable {
+    data: Table
 }
 
 // Will want to make the get/set a trait and add a Transpose wrapper
-impl Table {
+impl DeltaTable {
     fn new(i usize, j usize) -> Table {
         data = Vec::with_capacity(i);
         for idx in 0..i {
