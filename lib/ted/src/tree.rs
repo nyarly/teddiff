@@ -1,39 +1,48 @@
 type Label = u64;
 
-struct Node {
-    label: Label,
-    left: Option<Arc<Node>>,
-    right: Option<Arc<Node>>,
-    num_children: u64,
+trait Node {
+    fn iter_children(&self) -> impl DoubleEndedIterator<Item = Node>;
+
+    fn left_preorder(&self) -> impl Iterator<Item = Node> {
+        self.iter_children().fold(iter::once(self), |i, n| i.chain(n.left_preorder()) )
+    }
+
+    fn right_preorder(&self) -> impl Iterator<Item = Node> {
+        self.iter_children().rev().fold(iter::once(self), |i, n| i.chain(n.right_preorder()) )
+    }
+
+    fn left_postorder(&self) -> impl Iterator<Item = Node> {
+        self.iter_children().fold(iter::once(self), |i, n| n.left_postorder().chain(i) )
+    }
+
+    fn right_postorder(&self) -> impl Iterator<Item = Node> {
+        self.iter_children().rev().fold(iter::once(self), |i, n| n.right_postorder().chain(i) )
+    }
 }
 
-impl Node {
-    fn num_children(&self) -> u64 {
-        self.num_children
-    }
+struct ANode {
+    label: Label,
+    children: Vector<&Node>,
+}
 
-    fn heavy_child(&self) -> Option<Node> {
-    }
-
-    fn light_children(&self) -> Iterator<&Node> {
-        if self.left.num_children > self.right.num_children {
-            self.right.into_iter()
-        } else {
-            self.left.into_iter()
-        }
-    }
-
-    fn ltr_preorder(&self) -> Iterator<&Node> {
-        self.iter_children().fold(iter::once(self), |i, n| i.chain(n.ltr_preorder()))
-    }
-
-    fn rtl_preorder(&self) -> Iterator<&Node> {
-        self.iter_children().rev().fold(iter::once(self), |i, n| i.chain(n.rtl_preorder()))
-    }
-
+impl Node for ANode {
     fn iter_children(&self) -> Iterator<&Node> {
-        left.into_iter().chain(right.into_iter());
+        self.children.iter()
     }
+}
+
+struct NodeFrame {
+    index: usize,
+    node: Arc<Node>,
+}
+
+fn bedeck(tree: impl Node) -> Vector<NodeFrame> {
+    tree.left_postorder.enumerate().map(|(i,n)|{
+        NodeFrame{
+            index: i
+            node: Arc::new(n)
+        }
+    }).collect()
 }
 
 struct Forest {
